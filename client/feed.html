@@ -1,0 +1,337 @@
+<html>
+
+<head>
+  <style>
+    @import url("https://fonts.googleapis.com/css2?family=Roboto:wght@300&display=swap");
+
+    body {
+      margin: 0;
+      width: 100vw;
+      height: 100vh;
+      display: flex;
+      flex-flow: row;
+      justify-content: center;
+      align-items: center;
+      align-content: center;
+    }
+
+    .segment {
+      border-style: solid;
+      border-width: 1px;
+      border-radius: 10px;
+    }
+
+    #userList {
+      height: 95vh;
+      width: 20vw;
+      margin-right: 0.1em;
+      overflow-y: scroll;
+    }
+
+    #chat {
+      height: 95vh;
+      width: 70vw;
+      margin-left: 0.1em;
+
+      display: flex;
+      flex-flow: column;
+      justify-content: center;
+      align-items: center;
+      align-content: center;
+    }
+
+    #chatBox {
+      width: 98%;
+      height: 100%;
+    }
+
+    #chatField{
+      width: 98%;
+      height: 95%;
+      overflow-y: scroll;
+    }
+
+    #textInput {
+      width: 98%;
+      margin-top: 0.8em;
+      margin-bottom: 0.8em;
+    }
+
+    #submitInput {
+      width: 95%;
+    }
+
+    .chatUsername {
+      color: purple;
+    }
+
+    .textSent {
+      font-family: "Roboto", sans-serif;
+      display: flex;
+      flex-flow: row;
+
+      color: white;
+      background-color: rgb(0, 132, 255);
+      padding: 0.4em;
+      border-radius: 10px;
+
+      width: fit-content;
+      margin: 0.4em;
+    }
+
+    .textRecv {
+      font-family: "Roboto", sans-serif;
+      display: flex;
+      flex-flow: row;
+
+      background-color: rgb(226 226 226);
+      padding: 0.4em;
+      border-radius: 10px;
+
+      width: fit-content;
+      margin: 0.4em;
+    }
+
+    .sentMsg {
+      display: flex;
+      flex-flow: row;
+      justify-content: flex-end;
+    }
+
+    .recvMsg {
+      display: flex;
+      flex-flow: row;
+    }
+
+    .header {
+      display: flex;
+      flex-flow: row;
+      justify-content: space-between;
+      width: 96%;
+      padding: 0.5em;
+      margin: 10px;
+      border-radius: 10px;
+
+      background-color: rgb(226 226 226);
+    }
+
+    .fromTo {
+      display: flex;
+      flex-flow: row;
+      font-family: "Roboto", sans-serif;
+    }
+
+    .friend {
+      font-family: "Roboto", sans-serif;
+      display: flex;
+      flex-flow: row;
+
+      background-color: rgb(226 226 226);
+      padding: 0.4em;
+      border-radius: 10px;
+
+      width: fit-content;
+      margin: 0.4em;
+      width: 93%;
+    }
+
+    .friend_n{
+      font-family: "Roboto", sans-serif;
+      display: flex;
+      flex-flow: row;
+
+      background-color: rgb(225 96 96);
+      padding: 0.4em;
+      border-radius: 10px;
+
+      width: fit-content;
+      margin: 0.4em;
+      width: 93%;
+    }
+
+    .friend_s{
+      font-family: "Roboto", sans-serif;
+      display: flex;
+      flex-flow: row;
+
+      background-color: rgb(0 155 255);
+      color: white;
+      padding: 0.4em;
+      border-radius: 10px;
+
+      width: fit-content;
+      margin: 0.4em;
+      width: 93%;
+    }
+
+    .friend:hover {
+      background-color: rgb(210 210 210);
+    }
+
+    .friend_n:hover {
+      background-color: rgb(205 76 76);
+    }
+
+    .friend:active {
+      background-color: rgb(180 180 180);
+    }
+  </style>
+  <script>
+    var selectedUsername = null;
+    var notifications = [];
+
+    function checkAuth(x) {
+      if (!x) window.location.replace("/auth");
+    }
+
+    function selectUser(usr) {
+      selectedUsername = usr;
+      document.getElementById("toUsername").innerText=usr;
+    }
+
+    function sendMsg() {
+      if (selectedUsername) {
+        fetch("/send_msg", {
+          method: "POST",
+          headers: { "Content-Type": "application/json" },
+          body: JSON.stringify({
+            username: localStorage.username,
+            password: localStorage.password,
+            message: document.getElementById('submitInput').value,
+            reciever: selectedUsername
+          }),
+        })
+          .then((res) => res.json())
+          .then((res) => {
+            checkAuth(res.authentificated)
+          });
+      } else {
+        alert("Please select a user to send the message to !");
+      }
+    }
+
+    function messenger() {
+
+      document.getElementById("selfUsername").innerText=localStorage.username;
+
+      if (!localStorage.username || !localStorage.password) {
+        window.location.replace("/auth");
+      }
+
+      setInterval(() => {
+        getData();
+      }, 1000);
+
+      function getData() {
+        fetch("/users", {
+          method: "POST",
+          headers: { "Content-Type": "application/json" },
+          body: JSON.stringify({
+            username: localStorage.username,
+            password: localStorage.password,
+          }),
+        })
+          .then((res) => res.json())
+          .then((res) => {
+            checkAuth(res.authentificated)
+            var friends = ``;
+            res.users.map((user) => {
+              if(user.username !== localStorage.username){
+                if(notifications.indexOf(user.username) !== -1){
+                  friends += `<div class="friend_n" onClick="selectUser('${user.username}');">${user.username}</div>`;
+                } else {
+                  if(selectedUsername === user.username){
+                    friends += `<div class="friend_s" onClick="selectUser('${user.username}');">${user.username}</div>`;
+                  } else {
+                    friends += `<div class="friend" onClick="selectUser('${user.username}');">${user.username}</div>`;
+                  }
+                }
+              }
+            });
+
+            document.getElementById("userList").innerHTML = friends;
+          });
+
+        //fetch notifications
+        fetch("/get_new", {
+          method: "POST",
+          headers: { "Content-Type": "application/json" },
+          body: JSON.stringify({
+            username: localStorage.username,
+            password: localStorage.password,
+          }),
+        })
+          .then((res) => res.json())
+          .then((res) => {
+            checkAuth(res.authentificated)
+            notifications =[];
+            res.data.map(notification=>{
+              notifications.push(notification.sender)
+            })
+          });
+
+        //fetch messages
+        if (selectedUsername)
+          fetch("/get_msg", {
+            method: "POST",
+            headers: { "Content-Type": "application/json" },
+            body: JSON.stringify({
+              username: localStorage.username,
+              password: localStorage.password,
+              sender: selectedUsername,
+            }),
+          })
+            .then((res) => res.json())
+            .then((res) => {
+              checkAuth(res.authentificated)
+              var chat = '';
+              
+
+              res.data.map(msg=>{
+                if(msg.sender === localStorage.username){
+                  chat += `<div class="sentMsg"><div class="textSent">${msg.message}</div></div>`
+                } else {
+                  chat += `<div class="recvMsg"><div class="textRecv">${msg.message}</div></div>`
+                }
+              })
+
+              document.getElementById("chatField").innerHTML = chat;
+
+            });
+      }
+    }
+  </script>
+</head>
+
+<body onLoad="messenger();">
+  <div id="userList" class="segment">
+    <div class="friend">Iosif</div>
+  </div>
+
+  <div class="segment" id="chat">
+    <div class="header">
+      <div class="fromTo">
+        To:&nbsp;&nbsp;
+        <div id='toUsername'></div>
+      </div>
+      <div class="fromTo">
+        From :&nbsp;&nbsp;
+        <div id="selfUsername"></div>
+        &nbsp;&nbsp;&nbsp;&nbsp;
+        <button onClick="window.location.replace('/auth');">Logout</button>
+      </div>
+    </div>
+
+    <div id="chatBox">
+      
+    <div id='chatField' class="segment">
+    </div>
+
+      <div id="textInput">
+        <input id="submitInput" />
+        <button onClick="sendMsg();">Submit</button>
+      </div>
+  </div>
+</body>
+
+</html>

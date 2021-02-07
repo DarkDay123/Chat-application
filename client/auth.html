@@ -1,0 +1,67 @@
+<html>
+  <head>
+    <style>
+      body {
+        display: flex;
+        flex-flow: column;
+        justify-content: center;
+        align-items: center;
+        align-content: center;
+        height: 100vh;
+        overflow: hidden;
+      }
+      button {
+        margin-top: 1em;
+      }
+      .err {
+        background-color: rgba(255, 56, 56, 0.1);
+        padding: 0.2em;
+        border-radius: 10px;
+      }
+    </style>
+
+    <script>
+      function clearStorage() {
+        delete localStorage.username;
+        delete localStorage.password;
+      }
+
+      function auth() {
+        var username = document.getElementById("username").value;
+        var password = document.getElementById("password").value;
+
+        fetch("/auth", {
+          method: "POST",
+          headers: { "Content-Type": "application/json" },
+          body: JSON.stringify({ username: username, password: password }),
+        })
+          .then((res) => res.json())
+          .then((res) => {
+            console.log(res);
+            document.getElementById("status").innerText = JSON.stringify(res);
+            document.getElementById("status").className = "";
+
+            if (res.authentificated) {
+              //store the username & password to the localstorage of the browser
+              localStorage.username = username;
+              localStorage.password = password;
+
+              window.location.replace('/feed');
+            } else {
+              document.getElementById("status").className = "err";
+            }
+          });
+      }
+    </script>
+  </head>
+  <body onLoad="clearStorage()">
+    <p>Messenger Login</p>
+
+    <input type="text" , id="username" placeholder="Username" />
+    <input type="password" , id="password" placeholder="Password" />
+
+    <button onClick="auth()">Submit</button>
+
+    <p id="status"></p>
+  </body>
+</html>
